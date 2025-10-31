@@ -25,9 +25,12 @@ $ sudo rmmod bytegen
 #include <asm/uaccess.h>    // copy_to_user
 
 
-#define DRIVER_NAME   "bytegen"
-#define DEVICE_COUNT  256        // 0x00 to 0xFF
-#define DEBUG         0          // NO DEBUG, by default. Set to 1 to enable.
+#define DRIVER_NAME         "bytegen"
+#define DEVICE_COUNT        256        // 0x00 to 0xFF
+#define DEBUG               0          // NO DEBUG, by default. Set to 1 to enable.
+
+// If set to 0, only root will be able to use these devices!
+#define ALLOW_ALL_USERS     1
 
 
 // Global structs and variables.
@@ -126,8 +129,12 @@ static int __init bytegen_init(void) {
 
         return PTR_ERR(bytegen_class);
     }
-	// Set the callback.
+#if ALLOW_ALL_USERS == 1
+	// Set the callback, so ALL users can use the devices.
 	bytegen_class->dev_uevent = bytegen_uevent;
+#else
+	printk(KERN_INFO "[bytegen]: SECURITY, the devices are restricted to root.\n");
+#endif
 
     // 3. INIT udev struct.
     cdev_init(&bytegen_cdev, &bytegen_fops);
