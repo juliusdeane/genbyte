@@ -11,6 +11,10 @@
 # KEYS:
 *.der
 *.priv
+*.sec
+*.secret
+*.pem
+*.key
 
 # Prerequisites
 *.d
