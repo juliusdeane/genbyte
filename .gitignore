@@ -1,3 +1,17 @@
+# IntelliJ resources
+.idea/
+
+# Project resources
+*.bck
+*.*.bck
+*.bak
+*.*.bak
+*~
+
+# KEYS:
+*.der
+*.priv
+
 # Prerequisites
 *.d
 
