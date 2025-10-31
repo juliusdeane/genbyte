@@ -58,20 +58,30 @@ $ ls /dev/bytegen
 
 Now, using one of these char devices, you can just issue:
 
+
+```shell
+$ sudo dd if=/dev/bytegen/0x41 bs=1 count=10
+AAAAAAAAAA10+0 registros leídos
+10+0 registros escritos
+10 bytes copied, 2,9249e-05 s, 342 kB/s
+```
+
+Or:
+
 ```shell
 $ sudo dd if=/dev/bytegen/0x41 bs=32 count=1
-AAAA4+0 records in
-4+0 records out
-4 bytes copied, 1.5047e-05 s, 266 kB/s
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA1+0 registros leídos
+1+0 registros escritos
+32 bytes copied, 1,2725e-05 s, 2,5 MB/s
 ```
 
 Or:
 
 ```shell
 $ sudo dd if=/dev/bytegen/0x42 bs=32 count=1
-BBBB4+0 records in
-4+0 records out
-4 bytes copied, 3.5657e-05 s, 14.4 MB/s
+BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB1+0 registros leídos
+1+0 registros escritos
+32 bytes copied, 1,2715e-05 s, 2,5 MB/s
 ```
 
 So now you can just generate arbitrary byte values with a character device just using this virtual device :)
