@@ -38,10 +38,18 @@ static struct cdev bytegen_cdev;
 /*****************************************************************************
  * BEGIN module logic:
  *****************************************************************************/
+/**
+ * This is a callback that will be invoked when create_class is successful.
+ */
+static int bytegen_uevent(const struct device *dev, struct kobj_uevent_env *env) {
+    // THIS SETS PERMS TO: mask=0444 (r--r--r--)
+    add_uevent_var(env, "DEVMODE=%#o", 0444);
+    return 0;
+}
+
 /*****************************************************************************
  * file_operations:
  *****************************************************************************/
-
 /**
  * @brief Read method for the device.
  *
@@ -118,6 +126,8 @@ static int __init bytegen_init(void) {
 
         return PTR_ERR(bytegen_class);
     }
+	// Set the callback.
+	bytegen_class->dev_uevent = bytegen_uevent;
 
     // 3. INIT udev struct.
     cdev_init(&bytegen_cdev, &bytegen_fops);
