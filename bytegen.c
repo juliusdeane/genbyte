@@ -44,12 +44,16 @@ static struct cdev bytegen_cdev;
 /**
  * This is a callback that will be invoked when create_class is successful.
  */
+#if ALLOW_ALL_USERS == 1
+// Define the callback
 static int bytegen_uevent(const struct device *dev, struct kobj_uevent_env *env) {
     // THIS SETS PERMS TO: mask=0444 (r--r--r--)
     add_uevent_var(env, "DEVMODE=%#o", 0444);
     return 0;
 }
-
+#else
+printk(KERN_INFO "[bytegen]: SECURITY, we do not define all users callback (bytegen_uevent).\n");
+#endif
 /*****************************************************************************
  * file_operations:
  *****************************************************************************/
@@ -204,7 +208,7 @@ BUT there are minor discrepancies.
 So, no way to use Apache 2 as a license here.
 * ************************************************************************* */
 MODULE_ALIAS("dev:bytegen");
-MODULE_VERSION("1.0");
+MODULE_VERSION("1.1I");
 
 // MODULE_LICENSE("APACHE 2.0");  // NOPE
 MODULE_LICENSE("GPL");
