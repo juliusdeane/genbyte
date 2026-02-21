@@ -29,8 +29,11 @@ $ sudo rmmod bytegen
 #define DEVICE_COUNT        256        // 0x00 to 0xFF
 #define DEBUG               0          // NO DEBUG, by default. Set to 1 to enable.
 
-// If set to 0, only root will be able to use these devices!
-#define ALLOW_ALL_USERS     1
+// If set to 0 at load time, only root will be able to use these devices.
+// Example: sudo modprobe bytegen allow_all_users=0
+static int allow_all_users = 1;
+module_param(allow_all_users, int, 0444);
+MODULE_PARM_DESC(allow_all_users, "If 1 (default), all users can read devices. If 0, root only.");
 
 
 // Global structs and variables.
@@ -63,14 +66,22 @@ static ssize_t bytegen_read(struct file *filp, char __user *buf, size_t count, l
     // Use: MINOR(filp->f_inode->i_rdev) to retrieve the minor number.
     unsigned char byte_to_emit = MINOR(filp->f_inode->i_rdev);
     ssize_t bytes_sent = 0;
+    size_t chunk;
+
+    // Fill a page-sized kernel buffer once and reuse it across chunks,
+    // avoiding a copy_to_user call per byte.
+    unsigned char kbuf[PAGE_SIZE];
+    memset(kbuf, byte_to_emit, PAGE_SIZE);
 
     // Emit byte count number of times.
     while (bytes_sent < count) {
-        // Send the byte to userspace.
-        if (copy_to_user(buf + bytes_sent, &byte_to_emit, 1))
+        chunk = min((size_t)(count - bytes_sent), (size_t)PAGE_SIZE);
+
+        // Send the chunk to userspace.
+        if (copy_to_user(buf + bytes_sent, kbuf, chunk))
             return -EFAULT; // POINTER ERROR.
 
-        bytes_sent++;
+        bytes_sent += chunk;
     }
 
     return bytes_sent; // Returns actual byte sent count
@@ -102,6 +113,7 @@ static const struct file_operations bytegen_fops = {
     .open    = bytegen_open,
     .release = bytegen_release,
     .read    = bytegen_read,
+    .llseek  = no_llseek,   // Seeking is not meaningful on an infinite byte stream.
     // NO WRITE, read only device.
 };
 
@@ -129,12 +141,12 @@ static int __init bytegen_init(void) {
 
         return PTR_ERR(bytegen_class);
     }
-#if ALLOW_ALL_USERS == 1
-	// Set the callback, so ALL users can use the devices.
-	bytegen_class->dev_uevent = bytegen_uevent;
-#else
-	printk(KERN_INFO "[bytegen]: SECURITY, the devices are restricted to root.\n");
-#endif
+    if (allow_all_users) {
+        // Set the callback, so ALL users can use the devices.
+        bytegen_class->dev_uevent = bytegen_uevent;
+    } else {
+        printk(KERN_INFO "[bytegen]: SECURITY, the devices are restricted to root.\n");
+    }
 
     // 3. INIT udev struct.
     cdev_init(&bytegen_cdev, &bytegen_fops);

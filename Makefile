@@ -19,6 +19,8 @@
 
 # This will be the name of the files created, for example, [bytegen].ko.
 TARGET_MODULE := bytegen
+MODULE_VERSION := 1.0
+DKMS_SRCDIR   := /usr/src/$(TARGET_MODULE)-$(MODULE_VERSION)
 UDEV_RULES_FILENAME := /etc/udev/rules.d/99-$(TARGET_MODULE).rules
 UDEV_RULES_FILENAME_EXISTS = $(shell test -e $(UDEV_RULES_FILENAME) && echo yes)
 
@@ -157,6 +159,29 @@ test:
 		exit 1; \
 	fi
 	@echo
+
+dkms_add:
+	@echo "[DKMS] Copying sources to $(DKMS_SRCDIR)"
+	@sudo mkdir -p $(DKMS_SRCDIR)
+	@sudo cp bytegen.c Makefile dkms.conf dkms_sign.sh $(DKMS_SRCDIR)/
+	@sudo chmod +x $(DKMS_SRCDIR)/dkms_sign.sh
+	@sudo cp MOK.secret MOK.der $(DKMS_SRCDIR)/ 2>/dev/null || \
+		echo "[DKMS] Warning: MOK keys not found — module will not be signed automatically."
+	@sudo dkms add -m $(TARGET_MODULE) -v $(MODULE_VERSION)
+	@sudo dkms build -m $(TARGET_MODULE) -v $(MODULE_VERSION)
+	@sudo dkms install -m $(TARGET_MODULE) -v $(MODULE_VERSION)
+	@echo "[DKMS] Done. Module will be rebuilt automatically on kernel updates."
+	@echo
+
+dkms_remove:
+	@echo "[DKMS] Removing $(TARGET_MODULE) from DKMS."
+	@sudo dkms remove -m $(TARGET_MODULE) -v $(MODULE_VERSION) --all
+	@sudo rm -rf $(DKMS_SRCDIR)
+	@echo "[DKMS] Done."
+	@echo
+
+dkms_status:
+	@dkms status -m $(TARGET_MODULE)
 
 clean:
 	@rm -f *.ko *.o .bytegen.* .Module* .module* Module.symvers modules.order bytegen.mod* *.ko.bak

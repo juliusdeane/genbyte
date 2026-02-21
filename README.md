@@ -34,9 +34,9 @@ bytegen                12288  0
 And now the module is ready to be used.
 
 
-> !!!!! Pay attention here, I mean it !!!!! 
-> 
-> **VERY IMPORTANT**: the moment the kernel version changes, the moment you will need to rebuild the module and load again. I have in the TODO the idea of integrating with DKMS, but was too much effort just for this test.
+> !!!!! Pay attention here, I mean it !!!!!
+>
+> **VERY IMPORTANT**: the moment the kernel version changes, the moment you will need to rebuild the module and load again. See the [DKMS section](#dkms-automatic-rebuild-on-kernel-updates) below to automate this.
 
 
 ## /dev/bytegen/
@@ -106,9 +106,31 @@ static int bytegen_uevent(const struct device *dev, struct kobj_uevent_env *env)
 
 With the `0444` mask, every user in the system will be able to use the character devices.
 
-> But, wait, I do want to limit the use of these character devices only to root! Yeah, you can do that: just edit `bytegen.c` and change `ALLOW_ALL_USERS` from 1 to 0.
-> 
-> This will not link the callback to set more open permissions, and only root will be able to use them.
+### Controlling access via module parameter
+
+The permission behaviour is controlled by the `allow_all_users` module parameter (default: `1`). No recompilation is needed — just pass it at load time:
+
+```shell
+# Open to all users (default):
+$ sudo modprobe bytegen
+
+# Restrict to root only:
+$ sudo modprobe bytegen allow_all_users=0
+```
+
+You can inspect the current value at any time while the module is loaded:
+
+```shell
+$ cat /sys/module/bytegen/parameters/allow_all_users
+1
+```
+
+You can also check the parameter description via `modinfo`:
+
+```shell
+$ modinfo bytegen | grep allow_all_users
+parm:           allow_all_users:If 1 (default), all users can read devices. If 0, root only. (int)
+```
 
 
 
@@ -182,3 +204,41 @@ DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD32+0 records in
 32+0 records out
 32 bytes copied, 4.9783e-05 s, 643 kB/s
 ```
+
+
+## DKMS: automatic rebuild on kernel updates
+
+Without DKMS, every kernel update breaks the module and requires a manual rebuild, re-sign, and reinstall. DKMS automates all of that.
+
+### Prerequisites
+
+```shell
+$ sudo apt install dkms linux-headers-$(uname -r)
+```
+
+### Register with DKMS
+
+This copies the sources and MOK signing keys to `/usr/src/bytegen-1.0/`, registers the module, and performs the first build and install:
+
+```shell
+$ make dkms_add
+```
+
+> **Secure Boot**: if `MOK.secret` and `MOK.der` are present in the project directory, they are copied automatically and used to sign the module after every DKMS rebuild. If they are missing, the module will build but not be signed — it will fail to load on Secure Boot systems.
+
+From this point on, whenever a new kernel is installed via `apt`, DKMS rebuilds and signs `bytegen.ko` automatically before the next reboot.
+
+### Check DKMS status
+
+```shell
+$ make dkms_status
+bytegen/1.0, 6.8.0-90-generic, x86_64: installed
+```
+
+### Remove from DKMS
+
+```shell
+$ make dkms_remove
+```
+
+This unregisters the module from DKMS and removes the sources from `/usr/src/bytegen-1.0/`.
