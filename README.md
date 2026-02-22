@@ -10,6 +10,12 @@ This is quite powerful in *ix systems, as it is a quick way of creating a binary
 
 This is the main purpose of this kernel module :)
 
+## PRE-requisites
+
+To be able to load a module in kernels linked to Secure Boot you will need to enroll a MOK (*Machine Owner Key*). So, please, take on mind the process may not be comfortable if you are not used to it.
+
+> Whenever the kernel is updated, yes, it will require a re-compilation and signing with the MOK key.
+
 ## Basic usage
 
 Once the dynamic module is installed (for example, to `/lib/modules/<kernel version>/extra/bytegen.ko` or `/lib/modules/<kernel version>/updates/bytegen.ko`):
@@ -146,7 +152,9 @@ $ make build
 
 ## 2. Sign
 
-If you already have signing keys:
+If you have UEFI/Secure Boot in your machine, it is almost certain that you will not be able to load kernel modules that are not signed by an authorized key. So, please, pay attention to this section.
+
+Having signing keys (take a look into the `Makefile` if you already have your own ***MOK keys***):
 
 ```shell
 $ make sign
