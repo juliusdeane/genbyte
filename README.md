@@ -132,8 +132,6 @@ $ modinfo bytegen | grep allow_all_users
 parm:           allow_all_users:If 1 (default), all users can read devices. If 0, root only. (int)
 ```
 
-
-
 # WORKING WITH THE MODULE
 
 Build process, if you know about building and loading kernel modules, will have some complex steps. I tried to prepare the `Makefile` to be easy to use (I hope). 
@@ -218,7 +216,7 @@ $ sudo apt install dkms linux-headers-$(uname -r)
 
 ### Register with DKMS
 
-This copies the sources and MOK signing keys to `/usr/src/bytegen-1.0/`, registers the module, and performs the first build and install:
+This copies the sources and MOK signing keys to `/usr/src/bytegen-1.1/`, registers the module, and performs the first build and install:
 
 ```shell
 $ make dkms_add
@@ -232,7 +230,7 @@ From this point on, whenever a new kernel is installed via `apt`, DKMS rebuilds 
 
 ```shell
 $ make dkms_status
-bytegen/1.0, 6.8.0-90-generic, x86_64: installed
+bytegen/1.1, 6.8.0-90-generic, x86_64: installed
 ```
 
 ### Remove from DKMS
@@ -241,4 +239,4 @@ bytegen/1.0, 6.8.0-90-generic, x86_64: installed
 $ make dkms_remove
 ```
 
-This unregisters the module from DKMS and removes the sources from `/usr/src/bytegen-1.0/`.
+This unregisters the module from DKMS and removes the sources from `/usr/src/bytegen-1.1/`.

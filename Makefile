@@ -19,7 +19,7 @@
 
 # This will be the name of the files created, for example, [bytegen].ko.
 TARGET_MODULE := bytegen
-MODULE_VERSION := 1.0
+MODULE_VERSION := 1.1
 DKMS_SRCDIR   := /usr/src/$(TARGET_MODULE)-$(MODULE_VERSION)
 UDEV_RULES_FILENAME := /etc/udev/rules.d/99-$(TARGET_MODULE).rules
 UDEV_RULES_FILENAME_EXISTS = $(shell test -e $(UDEV_RULES_FILENAME) && echo yes)

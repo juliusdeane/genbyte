@@ -25,9 +25,11 @@ $ sudo rmmod bytegen
 #include <asm/uaccess.h>    // copy_to_user
 
 
-#define DRIVER_NAME         "bytegen"
-#define DEVICE_COUNT        256        // 0x00 to 0xFF
-#define DEBUG               0          // NO DEBUG, by default. Set to 1 to enable.
+#define DRIVER_NAME             "bytegen"
+#define DEVICE_COUNT            256        // 0x00 to 0xFF
+#define MAX_DEVICE_NAME_LENGTH  10
+#define DEBUG                    0         // NO DEBUG, by default. Set to 1 to enable.
+
 
 // If set to 0 at load time, only root will be able to use these devices.
 // Example: sudo modprobe bytegen allow_all_users=0
@@ -68,14 +70,15 @@ static ssize_t bytegen_read(struct file *filp, char __user *buf, size_t count, l
     ssize_t bytes_sent = 0;
     size_t chunk;
 
-    // Fill a page-sized kernel buffer once and reuse it across chunks,
-    // avoiding a copy_to_user call per byte.
-    unsigned char kbuf[PAGE_SIZE];
-    memset(kbuf, byte_to_emit, PAGE_SIZE);
+    // Fill a kernel buffer once and reuse it across chunks, avoiding a
+    // copy_to_user call per byte. Kept at 512 bytes to stay within the
+    // kernel stack frame limit (-Wframe-larger-than=1024).
+    unsigned char kbuf[512];
+    memset(kbuf, byte_to_emit, sizeof(kbuf));
 
     // Emit byte count number of times.
     while (bytes_sent < count) {
-        chunk = min((size_t)(count - bytes_sent), (size_t)PAGE_SIZE);
+        chunk = min((size_t)(count - bytes_sent), sizeof(kbuf));
 
         // Send the chunk to userspace.
         if (copy_to_user(buf + bytes_sent, kbuf, chunk))
@@ -123,7 +126,7 @@ static const struct file_operations bytegen_fops = {
 static int __init bytegen_init(void) {
     int i;              // index for our 256 devices.
     int ret;            // return value for INIT.
-    char dev_name[10];  // Device name like: 0x00, 0xFF, ...
+    char dev_name[MAX_DEVICE_NAME_LENGTH];  // Device name like: 0x00, 0xFF, ...
 
     // 1. Dynamic MAJOR NUMBER and 256 minor numbers.
     ret = alloc_chrdev_region(&bytegen_dev_number, 0, DEVICE_COUNT, DRIVER_NAME);
@@ -216,7 +219,7 @@ BUT there are minor discrepancies.
 So, no way to use Apache 2 as a license here.
 * ************************************************************************* */
 MODULE_ALIAS("dev:bytegen");
-MODULE_VERSION("1.0");
+MODULE_VERSION("1.1");
 
 // MODULE_LICENSE("APACHE 2.0");  // NOPE
 MODULE_LICENSE("GPL");

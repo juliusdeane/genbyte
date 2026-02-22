@@ -3,9 +3,10 @@
 # Working directory when invoked is the DKMS build directory (where bytegen.ko lives).
 #
 # Usage (by DKMS internally): dkms_sign.sh <kernelver>
+MODULE_VERSION=1.1
 
 KERNELVER=${1:-$(uname -r)}
-SRCDIR="/usr/src/bytegen-1.0"
+SRCDIR="/usr/src/bytegen-${MODULE_VERSION}"
 SIGN_FILE="/usr/src/linux-headers-${KERNELVER}/scripts/sign-file"
 KEY="${SRCDIR}/MOK.secret"
 CERT="${SRCDIR}/MOK.der"
